@@ -193,8 +193,8 @@ async function loadProps(cid){ const heads=[["Melting Point","טמפרטורת �
 async function loadGHS(cid){ const el=$("#ghsBody"); try{ const d=await getJSON(`${VIEW}/${cid}/JSON?heading=GHS+Classification`); const out=[]; collect(d.Record,out);
     const pics=[]; let signal=""; const hz=[];
     out.forEach(v=>{ v.m.forEach(mk=>{ if(mk.URL&&/GHS\d\d/.test(mk.URL)&&!pics.some(p=>p.url===mk.URL)) pics.push({url:mk.URL,t:mk.Extra||""}); });
-      if(/^(Danger|Warning)$/.test(v.s)) signal=v.s; if(/^H\d{3}/.test(v.s)) hz.push(v.s.replace(/\s*\[.*$/,"")); });
-    const uh=[...new Set(hz)].slice(0,8); el.className="";
+      if(/^(Danger|Warning)$/.test(v.s)) signal=v.s; if(/^H\d{3}/.test(v.s)) hz.push(v.s.replace(/\s*\[.*$/,"").replace(/\s*\([\d.]+%\)/,"")); });
+    const seen=new Set(); const uh=hz.filter(h=>{const c=h.slice(0,4); if(seen.has(c))return false; seen.add(c); return true;}).slice(0,8); el.className="";
     el.innerHTML=(pics.length||signal||uh.length)?`<div class="ghs">${pics.map(p=>`<img src="${p.url}" alt="${esc(p.t)}" title="${esc(p.t)}">`).join("")}${signal?`<span class="signal ${signal.toLowerCase()}">${signal==="Danger"?"סכנה (Danger)":"אזהרה (Warning)"}</span>`:""}</div><ul class="hz">${uh.map(h=>`<li class="f" style="display:list-item;text-align:left">${esc(h)}</li>`).join("")}</ul>`:"<span class='status'>אין סיווג GHS לחומר הזה במאגר (למשל מים, סוכר).</span>";
   }catch(e){ el.className=""; el.innerHTML="<span class='status'>אין סיווג GHS לחומר הזה במאגר.</span>"; } }
 // ---- מחשבון ----
