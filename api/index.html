@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>כרטיס חומר</title>
+<meta name="description" content="חיפוש חומר כימי וקבלת כרטיס חומר מלא מ-PubChem: נוסחה, מסה מולרית, מבנה, בטיחות וחישובי מולים. לתלמידי כימיה 5 יח״ל.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=Frank+Ruhl+Libre:wght@400;700;900&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* פריסה: כרטיסיית חומר על נייר מילימטרי. חיפוש למעלה, כרטיס החומר מתחת: מבנה מימין, נתונים משמאל. */
+:root{
+  --paper:#eaf0ea; --grid:#cfdccf; --grid2:#b4c7b4; --surface:#fbfcf8; --surface2:#f0f4ee; --ink:#141c22; --muted:#546069; --line:#141c22; --rule:#b9c4bb;
+  --accent:#4b2e83; --accent-soft:#e9e2f5; --accent-ink:#fff; --hazard:#f7c600; --bad:#a9281f; --bad-soft:#f6e0dc; --ok:#1d6b3f;
+  --display:"Frank Ruhl Libre",Georgia,serif; --body:"Assistant","Arial Hebrew",Arial,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace; --shadow:4px 4px 0 rgba(20,28,34,.14);
+}
+@media (prefers-color-scheme:dark){:root{
+  --paper:#101816; --grid:#1b2624; --grid2:#243331; --surface:#18221f; --surface2:#1f2b28; --ink:#e9eee6; --muted:#9aa8a2; --line:#e9eee6; --rule:#33413d;
+  --accent:#c9b1f0; --accent-soft:#2b2340; --accent-ink:#141c22; --bad:#ff8f84; --bad-soft:#3b1d1a; --ok:#6fd49a; --shadow:4px 4px 0 rgba(0,0,0,.45); color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper);background-image:linear-gradient(var(--grid2) 1px,transparent 1px),linear-gradient(90deg,var(--grid2) 1px,transparent 1px),linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:50px 50px,50px 50px,10px 10px,10px 10px;color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.55;min-height:100vh}
+#app{max-width:1060px;margin:0 auto;padding:12px max(16px,env(safe-area-inset-right,0px)) 56px max(16px,env(safe-area-inset-left,0px))}
+h1,h2,h3{font-family:var(--display);font-weight:700;line-height:1.2;margin:0;text-wrap:balance}
+h1{font-size:clamp(1.8rem,5vw,2.6rem);font-weight:900} h2{font-size:1.4rem} h3{font-size:1.05rem}
+p{margin:0}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--hazard);outline-offset:2px}
+.f{font-family:var(--mono);unicode-bidi:isolate;direction:ltr;display:inline-block}
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding:8px 0 12px;border-bottom:3px double var(--line);margin-bottom:22px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px}
+.brand .t{font-family:var(--display);font-weight:900;font-size:1.6rem;line-height:1.05}
+.brand .s{font-size:.86rem;color:var(--muted);font-family:var(--mono)}
+.meta{font-size:.84rem;color:var(--muted);font-family:var(--mono)}
+.intro{max-width:70ch;margin-bottom:16px}
+.search{display:flex;gap:0;border:1.5px solid var(--line);background:var(--surface);box-shadow:var(--shadow);position:relative;max-width:640px}
+.search input{flex:1;min-width:0;border:0;background:none;padding:12px 14px;font-size:1.05rem;direction:ltr;text-align:left;font-family:var(--mono)}
+.search button{border:0;border-inline-start:1.5px solid var(--line);background:var(--accent);color:var(--accent-ink);padding:0 18px;font-weight:700;cursor:pointer}
+.sugg{position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1.5px solid var(--line);border-top:0;z-index:5;display:none;max-height:260px;overflow:auto}
+.sugg button{display:block;width:100%;text-align:left;direction:ltr;border:0;background:none;padding:8px 14px;font-family:var(--mono);cursor:pointer;border-bottom:1px solid var(--rule)}
+.sugg button:hover,.sugg button.on{background:var(--accent-soft)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 22px;max-width:760px}
+.chips span.l{font-size:.84rem;color:var(--muted);align-self:center;font-family:var(--mono)}
+.chip{border:1.5px solid var(--line);background:var(--surface);padding:4px 10px;font-size:.92rem;cursor:pointer;box-shadow:2px 2px 0 var(--line)}
+.chip:hover{background:var(--accent-soft)}
+.chip:active{transform:translate(2px,2px);box-shadow:none}
+.status{font-family:var(--mono);font-size:.9rem;color:var(--muted);min-height:1.5em;margin-bottom:10px}
+.status.err{color:var(--bad);background:var(--bad-soft);padding:8px 12px;border-inline-start:4px solid var(--bad)}
+.card{background:var(--surface);border:1.5px solid var(--line);box-shadow:var(--shadow);padding:16px;display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:18px;position:relative}
+.card::before{content:"כרטיס חומר · PubChem";position:absolute;top:0;right:0;background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;padding:2px 10px}
+.struct{display:flex;flex-direction:column;gap:8px;align-items:center;margin-top:14px}
+.struct img{width:100%;max-width:280px;aspect-ratio:1;border:1px solid var(--rule);background:#fff;display:block}
+.struct .cap{font-size:.8rem;color:var(--muted);font-family:var(--mono)}
+.info{display:flex;flex-direction:column;gap:14px;min-width:0;margin-top:14px}
+.title .iupac{color:var(--muted);font-size:.92rem;direction:ltr;text-align:right;font-family:var(--mono);word-break:break-word}
+.kv{width:100%;border-collapse:collapse;font-size:.95rem}
+.kv td{padding:6px 8px;border-bottom:1px solid var(--rule);vertical-align:top}
+.kv tr:first-child td{border-top:1.5px solid var(--line)}
+.kv td:first-child{color:var(--muted);width:38%}
+.kv td:last-child{font-family:var(--mono);direction:ltr;text-align:right;font-variant-numeric:tabular-nums}
+.syn{display:flex;flex-wrap:wrap;gap:6px;direction:ltr}
+.syn span{font-family:var(--mono);font-size:.8rem;border:1px solid var(--rule);padding:2px 8px}
+.sec{border-inline-start:4px solid var(--accent);padding:8px 12px;background:var(--accent-soft)}
+.sec h3{margin-bottom:4px}
+.ghs{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ghs img{width:52px;height:52px;background:#fff;border:1px solid var(--rule)}
+.hz{font-size:.9rem;padding-inline-start:18px;margin:6px 0 0}
+.hz li{margin-bottom:2px}
+.signal{display:inline-block;font-family:var(--mono);font-weight:700;padding:2px 10px;border:1.5px solid currentColor}
+.signal.danger{color:var(--bad)} .signal.warning{color:#7a4e00}
+.calc{border:1.5px solid var(--line);padding:12px;background:var(--surface2);display:grid;gap:8px}
+.calc .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.calc input{width:7em;padding:6px 8px;border:1.5px solid var(--line);background:var(--surface);direction:ltr;text-align:left;font-family:var(--mono)}
+.calc .out{font-family:var(--mono);font-weight:600;direction:ltr;display:inline-block}
+.link{font-family:var(--mono);font-size:.86rem}
+.link a{color:var(--accent)}
+.foot{margin-top:34px;font-size:.82rem;color:var(--muted);border-top:3px double var(--line);padding-top:12px;max-width:90ch}
+[hidden]{display:none!important}
+@media (max-width:760px){.card{grid-template-columns:1fr}.struct img{max-width:240px}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <div class="brand">
+      <svg width="34" height="44" viewBox="0 0 34 44" aria-hidden="true"><rect x="9" y="2" width="16" height="4" rx="1.5" fill="currentColor" opacity=".55"/><path d="M11 6v26a6 6 0 0 0 12 0V6" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M11.8 22h10.4v10a5.2 5.2 0 0 1-10.4 0z" fill="currentColor" opacity=".5"/></svg>
+      <span><span class="t">כרטיס חומר</span><br><span class="s">נתונים חיים מ-PubChem · כימיה 5 יח"ל</span></span>
+    </div>
+    <span class="meta">פותח ע"י נוי נוביק</span>
+  </header>
+
+  <p class="intro">כתוב שם של חומר באנגלית (או נוסחה, כמו <span class="f">NaCl</span>), והאתר ימשוך מהמאגר של PubChem את הנוסחה, המסה המולרית, המבנה, תכונות פיזיקליות וסימוני הבטיחות. בתחתית הכרטיס יש מחשבון מולים שמשתמש במסה המולרית שהתקבלה.</p>
+
+  <form class="search" id="form" autocomplete="off">
+    <input id="q" placeholder="למשל: sodium chloride, glucose, ethanol, CuSO4" aria-label="שם החומר באנגלית" spellcheck="false">
+    <button type="submit">חפש</button>
+    <div class="sugg" id="sugg" role="listbox"></div>
+  </form>
+  <div class="chips" id="chips"><span class="l">חומרים מהמעבדה:</span></div>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <article class="card" id="card" hidden>
+    <div class="struct"><img id="img" alt="מבנה המולקולה (ציור דו-ממדי)"><span class="cap" id="cap"></span></div>
+    <div class="info">
+      <div class="title"><h2 id="name"></h2><div class="iupac" id="iupac"></div></div>
+      <table class="kv"><tbody id="kv"></tbody></table>
+      <div><h3>שמות נוספים</h3><div class="syn" id="syn"></div></div>
+      <div class="sec" id="props"><h3>תכונות פיזיקליות (ניסיוניות)</h3><div id="propsBody" class="status">טוען…</div></div>
+      <div class="sec" id="ghs"><h3>בטיחות (GHS)</h3><div id="ghsBody" class="status">טוען…</div></div>
+      <div class="calc">
+        <h3>מחשבון מולים לחומר הזה</h3>
+        <div class="row"><label for="g">מסה בגרם:</label><input id="g" inputmode="decimal" value="10"><span>→</span><span class="out" id="mol">—</span><span>mol</span></div>
+        <div class="row"><label for="ml">בנפח תמיסה (mL):</label><input id="ml" inputmode="decimal" value="100"><span>→ ריכוז</span><span class="out" id="molar">—</span><span>M</span></div>
+        <div class="row"><label for="n2">ומספר מולים:</label><input id="n2" inputmode="decimal" value="0.5"><span>→ מסה</span><span class="out" id="g2">—</span><span>g</span></div>
+      </div>
+      <div class="link" id="link"></div>
+    </div>
+  </article>
+
+  <p class="foot">הנתונים נמשכים בזמן אמת מ-PubChem (המכון הלאומי לבריאות, ארה"ב) דרך ה-API הציבורי PUG REST ו-PUG View, ללא מפתח. ערכים ניסיוניים מגיעים ממקורות שונים ועשויים להיות שונים מספרי הלימוד. מסה מולרית מחושבת לפי מסות אטומיות עדכניות, ולכן ייתכן הבדל קטן מהנוסחאון של הבגרות (למשל 58.44 לעומת 58.5 ל-NaCl).</p>
+</div>
+
+<script>
+"use strict";
+const $=s=>document.querySelector(s);
+const BASE="https://pubchem.ncbi.nlm.nih.gov/rest/pug";
+const VIEW="https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound";
+const SUB={"0":"₀","1":"₁","2":"₂","3":"₃","4":"₄","5":"₅","6":"₆","7":"₇","8":"₈","9":"₉"};
+// נוסחה עם ספרות קטנות: C6H12O6 → C₆H₁₂O₆. מטען בסוף (+, -, 2-) נשאר כסופרסקריפט
+function prettyFormula(f){ const m=f.match(/^(.*?)([+-]\d*)?$/); let core=m[1], ch=m[2]||"";
+  core=core.replace(/([A-Za-z\)\]])(\d+)/g,(a,b,c)=>b+c.split("").map(d=>SUB[d]).join(""));
+  if(ch){ const n=ch.replace(/[+-]/,""), s=ch.includes("+")?"+":"−"; ch="<sup>"+(n&&n!=="1"?n:"")+s+"</sup>"; }
+  return core+ch; }
+const CHIPS=[["מים","water"],["מלח בישול","sodium chloride"],["סוכר","sucrose"],["גלוקוז","glucose"],["אתנול","ethanol"],["חומצה אצטית","acetic acid"],["סודה לשתייה","sodium bicarbonate"],["אמוניום חנקתי","ammonium nitrate"],["נחושת גופרתית","copper sulfate"],["מי חמצן","hydrogen peroxide"],["חומצת מלח","hydrochloric acid"],["נתרן הידרוקסידי","sodium hydroxide"],["מתאן","methane"],["אספירין","aspirin"],["קפאין","caffeine"]];
+const chips=$("#chips"); CHIPS.forEach(([he,en])=>{const b=document.createElement("button"); b.type="button"; b.className="chip"; b.textContent=he; b.title=en; b.addEventListener("click",()=>{$("#q").value=en; search(en);}); chips.appendChild(b);});
+
+const status=(t,err)=>{const s=$("#status"); s.textContent=t; s.className="status"+(err?" err":"");};
+async function getJSON(url){ const r=await fetch(url); if(!r.ok){ const e=new Error("http"); e.status=r.status; throw e; } return r.json(); }
+
+// ---- השלמה אוטומטית ----
+let sugTimer=null, sugIdx=-1;
+$("#q").addEventListener("input",()=>{ clearTimeout(sugTimer); const q=$("#q").value.trim(); if(q.length<2){hideSugg();return;}
+  sugTimer=setTimeout(async()=>{ try{ const d=await getJSON(`https://pubchem.ncbi.nlm.nih.gov/rest/autocomplete/compound/${encodeURIComponent(q)}/json?limit=8`); const list=(d.dictionary_terms&&d.dictionary_terms.compound)||[]; showSugg(list); }catch(e){hideSugg();} },250); });
+function showSugg(list){ const s=$("#sugg"); if(!list.length){hideSugg();return;} sugIdx=-1; s.innerHTML=list.map(x=>`<button type="button" role="option">${esc(x)}</button>`).join(""); s.style.display="block";
+  s.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{$("#q").value=b.textContent; hideSugg(); search(b.textContent);})); }
+function hideSugg(){ $("#sugg").style.display="none"; }
+$("#q").addEventListener("keydown",e=>{ const bs=[...$("#sugg").querySelectorAll("button")]; if(!bs.length||$("#sugg").style.display==="none")return;
+  if(e.key==="ArrowDown"){e.preventDefault(); sugIdx=(sugIdx+1)%bs.length;} else if(e.key==="ArrowUp"){e.preventDefault(); sugIdx=(sugIdx-1+bs.length)%bs.length;} else if(e.key==="Enter"&&sugIdx>=0){e.preventDefault(); bs[sugIdx].click(); return;} else if(e.key==="Escape"){hideSugg();return;} else return;
+  bs.forEach((b,i)=>b.classList.toggle("on",i===sugIdx)); });
+document.addEventListener("click",e=>{ if(!e.target.closest(".search")) hideSugg(); });
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+// ---- חיפוש ----
+$("#form").addEventListener("submit",e=>{e.preventDefault(); hideSugg(); const q=$("#q").value.trim(); if(q) search(q);});
+let curMW=null;
+async function search(q){
+  status("מחפש את "+q+" ב-PubChem…"); $("#card").hidden=true;
+  try{
+    const props="MolecularFormula,MolecularWeight,IUPACName,XLogP,Charge,HBondDonorCount,HBondAcceptorCount,ExactMass";
+    const d=await getJSON(`${BASE}/compound/name/${encodeURIComponent(q)}/property/${props}/JSON`);
+    const p=d.PropertyTable.Properties[0]; const cid=p.CID;
+    render(q,p,cid);
+    status("נמצא. CID "+cid+".");
+    loadSynonyms(cid); loadProps(cid); loadGHS(cid);
+  }catch(e){
+    if(e.status===404) status("לא נמצא חומר בשם \""+q+"\". נסה שם אחר באנגלית, או בחר מההשלמה האוטומטית.",true);
+    else status("לא הצלחתי להגיע ל-PubChem. בדוק את החיבור לאינטרנט ונסה שוב. ("+(e.message||e)+")",true);
+  }
+}
+function render(q,p,cid){
+  curMW=parseFloat(p.MolecularWeight);
+  $("#name").textContent=q.charAt(0).toUpperCase()+q.slice(1);
+  $("#iupac").textContent=p.IUPACName?("IUPAC: "+p.IUPACName):"";
+  $("#img").src=`${BASE}/compound/cid/${cid}/PNG?image_size=300x300`;
+  $("#cap").textContent="CID "+cid;
+  const rows=[["נוסחה מולקולרית",prettyFormula(p.MolecularFormula)],["מסה מולרית",fmt(curMW)+" g/mol"],["מסה מדויקת",fmt(parseFloat(p.ExactMass))],["מטען",String(p.Charge??0)],["XLogP (שומניות)",p.XLogP!=null?String(p.XLogP):"—"],["תורמי קשר מימן",String(p.HBondDonorCount)],["מקבלי קשר מימן",String(p.HBondAcceptorCount)]];
+  $("#kv").innerHTML=rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join("");
+  $("#syn").innerHTML=""; $("#propsBody").textContent="טוען…"; $("#propsBody").className="status"; $("#ghsBody").textContent="טוען…"; $("#ghsBody").className="status";
+  $("#link").innerHTML=`<a href="https://pubchem.ncbi.nlm.nih.gov/compound/${cid}" target="_blank" rel="noopener">לדף המלא ב-PubChem ↗</a>`;
+  calc(); $("#card").hidden=false;
+}
+const fmt=x=>isFinite(x)?(+x.toPrecision(5)).toString():"—";
+async function loadSynonyms(cid){ try{ const d=await getJSON(`${BASE}/compound/cid/${cid}/synonyms/JSON`); const list=(d.InformationList.Information[0].Synonym||[]).filter(s=>!/^\d{2,7}-\d{2}-\d$/.test(s)&&s.length<40).slice(0,8); $("#syn").innerHTML=list.map(s=>`<span>${esc(s)}</span>`).join("")||"<span>—</span>"; }catch(e){ $("#syn").innerHTML="<span>—</span>"; } }
+// הולך על כל עץ ה-JSON של PUG View ואוסף מחרוזות ערך
+function collect(node,out){ if(!node||typeof node!=="object")return; if(Array.isArray(node)){node.forEach(n=>collect(n,out));return;}
+  if(node.Value&&node.Value.StringWithMarkup) node.Value.StringWithMarkup.forEach(s=>out.push({s:s.String,m:s.Markup||[]})); if(node.Value&&node.Value.Number) out.push({s:node.Value.Number.join(", ")+(node.Value.Unit?" "+node.Value.Unit:""),m:[]});
+  Object.values(node).forEach(v=>{ if(typeof v==="object") collect(v,out); }); }
+async function viewHeading(cid,h){ const d=await getJSON(`${VIEW}/${cid}/JSON?heading=${encodeURIComponent(h)}`); const out=[]; collect(d.Record,out); return out; }
+async function loadProps(cid){ const heads=[["Melting Point","טמפרטורת היתוך"],["Boiling Point","טמפרטורת רתיחה"],["Density","צפיפות"],["Solubility","מסיסות"]]; const rows=[];
+  for(const [h,he] of heads){ try{ const vals=await viewHeading(cid,h); const uniq=[...new Set(vals.map(v=>v.s))].filter(s=>s.length<120).slice(0,2); if(uniq.length) rows.push([he,uniq.map(esc).join(" · ")]); }catch(e){} }
+  const el=$("#propsBody"); el.className=""; el.innerHTML=rows.length?`<table class="kv"><tbody>${rows.map(r=>`<tr><td>${r[0]}</td><td style="direction:ltr;text-align:right;font-family:var(--mono);white-space:normal">${r[1]}</td></tr>`).join("")}</tbody></table>`:"<span class='status'>אין נתונים ניסיוניים לחומר הזה במאגר.</span>"; }
+async function loadGHS(cid){ const el=$("#ghsBody"); try{ const d=await getJSON(`${VIEW}/${cid}/JSON?heading=GHS+Classification`); const out=[]; collect(d.Record,out);
+    const pics=[]; let signal=""; const hz=[];
+    out.forEach(v=>{ v.m.forEach(mk=>{ if(mk.URL&&/GHS\d\d/.test(mk.URL)&&!pics.some(p=>p.url===mk.URL)) pics.push({url:mk.URL,t:mk.Extra||""}); });
+      if(/^(Danger|Warning)$/.test(v.s)) signal=v.s; if(/^H\d{3}/.test(v.s)) hz.push(v.s.replace(/\s*\[.*$/,"")); });
+    const uh=[...new Set(hz)].slice(0,8); el.className="";
+    el.innerHTML=(pics.length||signal||uh.length)?`<div class="ghs">${pics.map(p=>`<img src="${p.url}" alt="${esc(p.t)}" title="${esc(p.t)}">`).join("")}${signal?`<span class="signal ${signal.toLowerCase()}">${signal==="Danger"?"סכנה (Danger)":"אזהרה (Warning)"}</span>`:""}</div><ul class="hz">${uh.map(h=>`<li class="f" style="display:list-item;text-align:left">${esc(h)}</li>`).join("")}</ul>`:"<span class='status'>אין סיווג GHS לחומר הזה במאגר (למשל מים, סוכר).</span>";
+  }catch(e){ el.className=""; el.innerHTML="<span class='status'>אין סיווג GHS לחומר הזה במאגר.</span>"; } }
+// ---- מחשבון ----
+function num(id){ const v=parseFloat(String($(id).value).replace(",",".")); return isFinite(v)?v:NaN; }
+function calc(){ if(!curMW)return; const g=num("#g"), ml=num("#ml"), n2=num("#n2"); const n=g/curMW;
+  $("#mol").textContent=isFinite(n)?fmt(n):"—"; $("#molar").textContent=isFinite(n)&&ml>0?fmt(n/(ml/1000)):"—"; $("#g2").textContent=isFinite(n2)?fmt(n2*curMW):"—"; }
+["#g","#ml","#n2"].forEach(id=>$(id).addEventListener("input",calc));
+// חיפוש מהכתובת: ?q=glucose
+const q0=new URLSearchParams(location.search).get("q"); if(q0){$("#q").value=q0; search(q0);}
+</script>
+</body>
+</html>
